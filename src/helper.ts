@@ -7,6 +7,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 import dotenv from 'dotenv'
 import { getGptReply, getGptSummary } from "./openai.js";
+import axios from "axios";
+import cheerio from "cheerio";
+import puppeteer from "puppeteer";
+
 // 加载环境变量
 dotenv.config()
 const env = dotenv.config().parsed || {}// 环境参数
@@ -24,9 +28,11 @@ const roomWhiteList = env.ROOM_WHITELIST ? env.ROOM_WHITELIST.split(',') : []
 export const LOGPRE = "[PadLocalDemo]"
 
 export async function getMessagePayload(message: Message, bot: any) {
+    const today = moment().format("YYYY-MM-DD");
+
     const room = message.room();
     const roomName = await room?.topic() || "";
-    const userName = message.talker().name();
+    const userName = message.talker().name() || "匿名用户";
     const time = message.date();
     const contact = message.talker() // 发消息人
     const alias = (await contact.alias()) || (await contact.name()) // 发消息人昵称
@@ -43,15 +49,15 @@ export async function getMessagePayload(message: Message, bot: any) {
             const text = message.text();
             const isBotSelf = botName === remarkName || botName === name // 是否是机器人自己
             // 写入到本地
-            const today = moment().format("YYYY-MM-DD");
-            if (!fs.existsSync(path.resolve(__dirname, `./data/${today}/${roomName}`))) {
-                fs.mkdirSync(path.resolve(__dirname, `./data/${today}/${roomName}`));
+            if (!fs.existsSync(path.resolve(__dirname, `../data/${today}/${roomName}`))) {
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}`));
             }
             const filePath = path.resolve(
                 __dirname,
-                `./data/${today}/${roomName}/${roomName}.txt`
+                `../data/${today}/${roomName}/${roomName}.txt`
             );
-            const data = `${moment(time).format('YYYY-MM-DD HH:mm:ss')}:\n${userName}:\n${text}\n\n`;
+            // console.log(filePath);
+            const data = `${moment(time).format('YYYY-MM-DD HH:mm:ss')}|${userName}|${text}\n`;
             fs.appendFile(filePath, data, (err: any) => {
                 if (err) {
                     console.log(err);
@@ -61,16 +67,16 @@ export async function getMessagePayload(message: Message, bot: any) {
             });
 
             // 总结今日聊天内容
-            if (text.includes(`${botName}`) && text.includes("总结一下")) { 
+            if (text.includes(`${botName}`) && text.includes("总结一下")) {
                 console.log(filePath);
                 const fileContent = fs.readFileSync(filePath, "utf-8");
                 const result = await getGptSummary(fileContent)
                 const resopone = result.choices?.[0].message.content || ''
-                if(!resopone) return
+                if (!resopone) return
                 if (isRoom && room) {
                     room.say(resopone)
                 }
-                if (isAlias && !room) { 
+                if (isAlias && !room) {
                     contact.say(resopone)
                 }
                 return
@@ -97,22 +103,53 @@ export async function getMessagePayload(message: Message, bot: any) {
             } catch (e) {
                 console.error(e)
             }
-                    
+
             break;
 
-        case PUPPET.types.Message.Attachment:
+        case PUPPET.types.Message.Attachment: {
+            const attachFile = await message.toFileBox();
+            // const dataBuffer = await attachFile.toBuffer();
+            // log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
+            const fileName = attachFile.name;
+            const filePath = path.join(__dirname, `../data/${today}/${roomName}/files`, fileName);
+            // 创建文件存储目录（如果不存在）
+            if (!fs.existsSync(path.join(__dirname, `../data/${today}/${roomName}/files`))) {
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/files`), { mode: 0o755 });
+            }
+            // 保存文件
+            attachFile.toFile(filePath).then(() => {
+                console.log(`File saved to ${filePath}`);
+            }).catch(err => {
+                console.error('Error saving file:', err);
+            });
+            break;
+        }
         case PUPPET.types.Message.Audio: {
             const attachFile = await message.toFileBox();
 
             const dataBuffer = await attachFile.toBuffer();
 
-            log.info(LOGPRE, `get message audio or attach: ${dataBuffer.length}`);
+            log.info(LOGPRE, `get message audio: ${dataBuffer.length}`);
 
             break;
         }
 
         case PUPPET.types.Message.Video: {
             const videoFile = await message.toFileBox();
+            const fileName = videoFile.name;
+            const filePath = path.join(__dirname, `../data/${today}/${roomName}/videos`, fileName);
+
+            // 创建视频存储目录（如果不存在）
+            if (!fs.existsSync(path.join(__dirname, `../data/${today}/${roomName}/videos`))) {
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/videos`));
+            }
+
+            // 保存视频文件
+            videoFile.toFile(filePath).then(() => {
+                console.log(`Video saved to ${filePath}`);
+            }).catch(err => {
+                console.error('Error saving video:', err);
+            });
 
             const videoData = await videoFile.toBuffer();
 
@@ -159,13 +196,12 @@ export async function getMessagePayload(message: Message, bot: any) {
 
             // 保存处理图片
             const fileBox = await message.toFileBox();
-            const today = moment().format("YYYY-MM-DD");
-            if (!fs.existsSync(path.resolve(__dirname, `./data/${today}/${roomName}/image`))) {
-                fs.mkdirSync(path.resolve(__dirname, `./data/${today}/${roomName}/image`));
+            if (!fs.existsSync(path.resolve(__dirname, `../data/${today}/${roomName}/image`))) {
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/image`));
             }
             const filePath = path.resolve(
                 __dirname,
-                `./data/${today}/${roomName}/image/${alias}-${fileBox.name}`
+                `../data/${today}/${roomName}/image/${alias}-${fileBox.name}`
             );
             await fileBox.toFile(filePath, true);
             break;
@@ -173,7 +209,48 @@ export async function getMessagePayload(message: Message, bot: any) {
 
         case PUPPET.types.Message.Url: {
             const urlLink = await message.toUrlLink();
-            log.info(LOGPRE, `get message url: ${JSON.stringify(urlLink)}`);
+            const url = urlLink.url();
+            log.info(LOGPRE, `get message url: ${JSON.stringify(urlLink)}, ${url}`);
+
+            try {
+                const headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Referer': 'https://mp.weixin.qq.com/',
+                    "Cookie": "poc_sid=HC9-jmajLaBRa2FsSQnmpzp8JJCZDkwNKnXSnWx3; rewardsn=; wxtokenkey=777"
+                };
+                // 抓取网页内容
+                const response = await axios.get(url, {
+                    headers: headers,
+                });
+                const html = response.data;
+                // 使用 cheerio 解析网页内容
+                const $ = cheerio.load(html);
+                const title = $('title').text();
+                const articleContent = $('body').text(); // 根据实际网页结构修改选择器
+
+                // const browser = await puppeteer.launch({headless: "chrome"});
+                // const page = await browser.newPage();
+                // await page.goto(url, { waitUntil: 'networkidle2' });
+
+                // // 等待页面加载完成
+                // await page.waitForSelector('body');
+                // // 查找并点击目标按钮或链接
+                // await page.click('#js_verify'); // 替换为你要点击的元素的选择器
+                // // 等待一定时间以便观察结果
+                // await page.waitForTimeout(5000);
+
+                // 提取文章数据
+                // const title = await page.title();
+                // const articleContent = await page.evaluate((document) => {
+                //     return document.body.innerText; // 根据实际网页结构修改选择器
+                // });
+
+                console.log(`Title: ${title}`);
+                console.log(`Article content: ${articleContent.substring(0, 1000)}...`); // 仅打印前1000个字符
+            } catch (error) {
+                console.error('Error fetching the URL:', error);
+            }
+
 
             const urlThumbImage = await message.toFileBox();
             const urlThumbImageData = await urlThumbImage.toBuffer();

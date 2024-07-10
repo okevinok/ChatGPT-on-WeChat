@@ -1,8 +1,9 @@
 import QRCode from "qrcode";
 import { WechatyBuilder } from "wechaty";
-import { defaultMessage } from "./sendMessage.js";
-import { log, ScanStatus } from "wechaty";
-import { dingDongBot, getMessagePayload, LOGPRE } from "./helper.js";
+import { log } from "wechaty";
+import { getMessagePayload, LOGPRE } from "./helper.js";
+
+process.env.WECHATY_LOG = 'silent';
 
 // 初始化机器人
 const CHROME_BIN = process.env.CHROME_BIN ? { endpoint: process.env.CHROME_BIN } : {}

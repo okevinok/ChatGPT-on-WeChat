@@ -27,17 +27,6 @@ const aliasWhiteList = env.ALIAS_WHITELIST ? env.ALIAS_WHITELIST.split(',') : []
 // 从环境变量中导入群聊白名单
 const roomWhiteList = env.ROOM_WHITELIST ? env.ROOM_WHITELIST.split(',') : []
 
-
-
-// 获取当前日期的日志文件路径
-function getChatLogPath(roomName: string) {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return path.join('./data/log', `${roomName}_chat_log_${year}-${month}-${day}.txt`);
-}
-
 /**
  * 默认消息发送
  * @param msg

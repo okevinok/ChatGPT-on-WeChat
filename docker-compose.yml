@@ -2,7 +2,7 @@ version: "3.0"
 
 services:
   wechat-bot-wlq:
-    container_name: wechat-bot-wlq
+    container_name: wechat-bot-openai
     image: wechat-bot-openai
     build: .
     command: npm run dev
@@ -15,4 +15,6 @@ services:
     volumes:
       # 用户数据目录 
       - ./.env:/app/.env
-      - ./src/data:/app/src/data
+      - ./data:/app/data
+      - ./WechatEveryDay.memory-card.json:/app/WechatEveryDay.memory-card.json
+      - ./my-wechat-bot.memory-card.json:/app/my-wechat-bot.memory-card.json

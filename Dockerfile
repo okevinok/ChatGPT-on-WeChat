@@ -52,7 +52,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm config set registry ${NPM_REGISTRY} && npm i
 
+FROM builder AS final
+
 COPY *.ts ./
+COPY *.json ./
 COPY src/ ./src/
 
 # CMD ["npm", "run", "start"]
