@@ -16,5 +16,6 @@ services:
       # 用户数据目录 
       - ./.env:/app/.env
       - ./data:/app/data
+      - ./src:/app/src
       - ./WechatEveryDay.memory-card.json:/app/WechatEveryDay.memory-card.json
       - ./my-wechat-bot.memory-card.json:/app/my-wechat-bot.memory-card.json

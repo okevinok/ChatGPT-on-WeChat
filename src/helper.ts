@@ -57,7 +57,8 @@ export async function getMessagePayload(message: Message, bot: any) {
                 `../data/${today}/${roomName}/${roomName}.txt`
             );
             // console.log(filePath);
-            const data = `${moment(time).format('YYYY-MM-DD HH:mm:ss')}|${userName}|${text}\n`;
+            // ${moment(time).format('YYYY-MM-DD HH:mm:ss')}|
+            const data = `${userName}:${text}\n`;
             fs.appendFile(filePath, data, (err: any) => {
                 if (err) {
                     console.log(err);
@@ -213,20 +214,20 @@ export async function getMessagePayload(message: Message, bot: any) {
             log.info(LOGPRE, `get message url: ${JSON.stringify(urlLink)}, ${url}`);
 
             try {
-                const headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Referer': 'https://mp.weixin.qq.com/',
-                    "Cookie": "poc_sid=HC9-jmajLaBRa2FsSQnmpzp8JJCZDkwNKnXSnWx3; rewardsn=; wxtokenkey=777"
-                };
-                // 抓取网页内容
-                const response = await axios.get(url, {
-                    headers: headers,
-                });
-                const html = response.data;
-                // 使用 cheerio 解析网页内容
-                const $ = cheerio.load(html);
-                const title = $('title').text();
-                const articleContent = $('body').text(); // 根据实际网页结构修改选择器
+                // const headers = {
+                //     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                //     'Referer': 'https://mp.weixin.qq.com/',
+                //     "Cookie": "poc_sid=HC9-jmajLaBRa2FsSQnmpzp8JJCZDkwNKnXSnWx3; rewardsn=; wxtokenkey=777"
+                // };
+                // // 抓取网页内容
+                // const response = await axios.get(url, {
+                //     headers: headers,
+                // });
+                // const html = response.data;
+                // // 使用 cheerio 解析网页内容
+                // const $ = cheerio.load(html);
+                // const title = $('title').text();
+                // const articleContent = $('body').text(); // 根据实际网页结构修改选择器
 
                 // const browser = await puppeteer.launch({headless: "chrome"});
                 // const page = await browser.newPage();
@@ -245,8 +246,8 @@ export async function getMessagePayload(message: Message, bot: any) {
                 //     return document.body.innerText; // 根据实际网页结构修改选择器
                 // });
 
-                console.log(`Title: ${title}`);
-                console.log(`Article content: ${articleContent.substring(0, 1000)}...`); // 仅打印前1000个字符
+                // console.log(`Title: ${title}`);
+                // console.log(`Article content: ${articleContent.substring(0, 1000)}...`); // 仅打印前1000个字符
             } catch (error) {
                 console.error('Error fetching the URL:', error);
             }
