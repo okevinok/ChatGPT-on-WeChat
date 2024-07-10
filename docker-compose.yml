@@ -1,9 +1,11 @@
-version: '3'
+version: "3.0"
 
 services:
-  openai-on-wechat:
-    image: openai-on-wechat
+  wechat-bot-wlq:
+    container_name: wechat-bot-wlq
+    image: wechat-bot-openai
     build: .
+    command: npm run dev
     restart: always
     logging:
       driver: "json-file"
@@ -11,4 +13,6 @@ services:
         max-size: "10m"
         max-file: "3"
     volumes:
-      - ./config.yaml:/app/config.yaml
+      # 用户数据目录 
+      - ./.env:/app/.env
+      - ./src/data:/app/src/data

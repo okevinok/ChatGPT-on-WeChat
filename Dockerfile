@@ -1,29 +1,58 @@
-FROM python:3
+ARG APT_SOURCE="default"
+
+FROM node:19 as builder-default
+ENV NPM_REGISTRY="https://registry.npmjs.org"
+
+FROM node:19 as builder-aliyun
+
+ENV NPM_REGISTRY="https://registry.npmmirror.com"
+RUN sed -i s/deb.debian.org/mirrors.aliyun.com/g /etc/apt/sources.list \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo 'Asia/Shanghai' >/etc/timezone
+
+FROM builder-${APT_SOURCE} AS builder
+# Instal the 'apt-utils' package to solve the error 'debconf: delaying package configuration, since apt-utils is not installed'
+# https://peteris.rocks/blog/quiet-and-unattended-installation-with-apt-get/
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    apt-utils \
+    autoconf \
+    automake \
+    bash \
+    build-essential \
+    ca-certificates \
+    chromium \
+    coreutils \
+    curl \
+    ffmpeg \
+    figlet \
+    git \
+    gnupg2 \
+    jq \
+    libgconf-2-4 \
+    libtool \
+    libxtst6 \
+    moreutils \
+    python-dev \
+    shellcheck \
+    sudo \
+    tzdata \
+    vim \
+    wget \
+  && apt-get purge --auto-remove \
+  && rm -rf /tmp/* /var/lib/apt/lists/*
+
+FROM builder
+
+ENV CHROME_BIN="/usr/bin/chromium" \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+
+RUN mkdir -p /app
 WORKDIR /app
-ARG POETRY_VERSION=1.2.2
 
-# 更新并安装 nodejs
-RUN apt-get update && \
-    curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*  # 正确的清理 apt 缓存命令
+COPY package.json ./
+RUN npm config set registry ${NPM_REGISTRY} && npm i
 
-# 安装 Poetry
-RUN pip3 install --no-cache-dir poetry==${POETRY_VERSION} && \
-    rm -rf ~/.cache/pip/
+COPY *.ts ./
+COPY src/ ./src/
 
-COPY package*.json ./
-COPY pyproject.toml ./
-COPY poetry.lock ./
-
-# 设置环境变量以跳过 Puppeteer 的 Chromium 下载
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# 安装 Python 和 Node.js 依赖
-RUN poetry install && \
-    npm install && \
-    rm -rf ~/.npm/
-
-COPY . .
-
-CMD ["npm", "run", "dev"]
+# CMD ["npm", "run", "start"]

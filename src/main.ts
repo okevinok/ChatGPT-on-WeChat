@@ -28,8 +28,8 @@ async function main() {
         .on("message", async (message: any) => {
             try {
                 log.info(LOGPRE, `on message: ${message.toString()}`);
-                await getMessagePayload(message);
-                await defaultMessage(message, weChatBot)
+                await getMessagePayload(message, weChatBot);
+                // await defaultMessage(message, weChatBot)
             } catch (e) {
                 console.error(`❌ ${e}`);
             }

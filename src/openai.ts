@@ -30,7 +30,7 @@ export async function getGptReply(prompt: string) {
 export async function getGptSummary(prompt: string) {
     const response = await openai.chat.completions.create({
         messages: [
-            { role: 'system', content: '你是一个群聊总结助手，总结下面的内容'},
+            { role: 'system', content: '你是一个群聊总结助手，总结下面的内容，默认使用中文回答。'},
             { role: 'user', content: prompt },
         ],
         model: chosen_model,

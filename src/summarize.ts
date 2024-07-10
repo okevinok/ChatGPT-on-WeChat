@@ -1,7 +1,7 @@
 import fs from "fs";
 import axios from "axios";
 import dotenv from "dotenv";
-import { getGptSummary } from "./openai";
+import { getGptSummary } from "./openai.js";
 
 dotenv.config();
 
@@ -48,7 +48,7 @@ const run = async () => {
   try {
     const result = await getGptSummary(fileContent)
     // const result = res.data.answer.replace(/\n\n/g, "\n").trim();
-    console.log(result);
+    console.log(result.choices?.[0].message.content);
   } catch (e: any) {
     console.error("Error:" + e.message);
   }

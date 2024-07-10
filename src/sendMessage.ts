@@ -1,8 +1,17 @@
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
-import {log, ScanStatus, WechatyBuilder} from "wechaty";
-import {dingDongBot, getMessagePayload, LOGPRE} from "./helper";
+// import {log, ScanStatus, WechatyBuilder} from "wechaty";
+// import {dingDongBot, getMessagePayload, LOGPRE} from "./helper";
+
+import { getServe } from './server.js'
+import { Message } from 'wechaty'
+// import { MessageType } from 'wechaty-puppet/types'
+import { getChatGPTReply } from './chatgptAPI.js'
+import { getGptSummary } from './openai.js';
+import { dirname } from "path";
+import { fileURLToPath } from 'node:url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // 加载环境变量
 dotenv.config()
@@ -18,12 +27,7 @@ const aliasWhiteList = env.ALIAS_WHITELIST ? env.ALIAS_WHITELIST.split(',') : []
 // 从环境变量中导入群聊白名单
 const roomWhiteList = env.ROOM_WHITELIST ? env.ROOM_WHITELIST.split(',') : []
 
-import { getServe } from './server.js'
-import { Message } from 'wechaty'
-// import { MessageType } from 'wechaty-puppet/types'
-import * as PUPPET from 'wechaty-puppet'
-import { getChatGPTReply } from './chatgptAPI.js'
-import { WechatyInterface } from 'wechaty/impls'
+
 
 // 获取当前日期的日志文件路径
 function getChatLogPath(roomName: string) {
@@ -55,44 +59,6 @@ export async function defaultMessage(msg: Message, bot: any, ServiceType = 'GPT'
     const isRoom = roomWhiteList.includes(roomName) && content.includes(`${botName}`) // 是否在群聊白名单内并且艾特了机器人
     const isAlias = aliasWhiteList.includes(remarkName) || aliasWhiteList.includes(name) // 发消息的人是否在联系人白名单内
     const isBotSelf = botName === remarkName || botName === name // 是否是机器人自己
-
-    const timestamp = new Date().toLocaleString();
-
-    // 构建日志字符串
-    let logMessage = ''
-    // 获取当前日期的日志文件路径
-    // const chatLogPath = getChatLogPath(roomName); 
-
-    // if (msg.type() === bot.Message.Type.File) {
-    //     console.log(msg);
-
-    //     // const fileUrl = msg.FileUrl;  // 假设微信提供了这个字段
-    //     // const fileName = msg.filename;
-
-    //     // // 下载并存储PDF文件
-    //     // const fileStream = fs.createWriteStream(`./data/pdf/${fileName}`);
-    //     // request(fileUrl).pipe(fileStream).on('close', () => {
-    //     //     console.log(`Downloaded and saved ${fileName}`);
-    //     // });
-    // }
-    // // 保存处理图片
-    // if (msg.type() === PUPPET.types.Message.Image) {
-    //     const fileBox = await msg.toFileBox();
-    //     const filePath = `./data/image/${new Date().getTime()}-${roomName}-${alias}-${fileBox.name}`;
-    //     logMessage = `[${timestamp}] ${roomName} - ${alias}: ${filePath}\n`;
-    //     await fileBox.toFile(filePath, true);
-    // } else { 
-    //     logMessage = `[${timestamp}] ${roomName} - ${alias}: ${content}\n`;
-    // }
-
-    // // 追加日志到文件，如果文件不存在则创建文件
-    // fs.appendFile(chatLogPath, logMessage, (err) => {
-    //     if (err) {
-    //         console.error('Error writing to chat log file:', err);
-    //     } else {
-    //         console.log(`Chat log updated: ${chatLogPath}`);
-    //     }
-    // });
 
     // TODO 你们可以根据自己的需求修改这里的逻辑
     if (isBotSelf || !isText) return // 如果是机器人自己发送的消息或者消息类型不是文本则不处理
