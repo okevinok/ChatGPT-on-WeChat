@@ -40,7 +40,8 @@ export async function getMessagePayload(message: Message, bot: any) {
     const receiver = message.to() // 消息接收人
     const remarkName = await contact.alias() || "" // 备注名称
     const content = message.text() // 消息内容
-    const isRoom = roomWhiteList.includes(roomName) && content.includes(`${botName}`) // 是否在群聊白名单内并且艾特了机器人
+    // roomWhiteList.includes(roomName) &&
+    const isRoom = content.includes(`${botName}`) // 是否在群聊白名单内并且艾特了机器人
     const isAlias = aliasWhiteList.includes(remarkName) || aliasWhiteList.includes(name) // 发消息的人是否在联系人白名单内
 
     switch (message.type()) {
@@ -50,7 +51,7 @@ export async function getMessagePayload(message: Message, bot: any) {
             const isBotSelf = botName === remarkName || botName === name // 是否是机器人自己
             // 写入到本地
             if (!fs.existsSync(path.resolve(__dirname, `../data/${today}/${roomName}`))) {
-                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}`));
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}`), { recursive: true});
             }
             const filePath = path.resolve(
                 __dirname,
@@ -58,7 +59,7 @@ export async function getMessagePayload(message: Message, bot: any) {
             );
             // console.log(filePath);
             // ${moment(time).format('YYYY-MM-DD HH:mm:ss')}|
-            const data = `${userName}:${text}\n`;
+            const data = `${userName}:${text.replace(" ", ",")}\n`;
             fs.appendFile(filePath, data, (err: any) => {
                 if (err) {
                     console.log(err);
@@ -115,7 +116,7 @@ export async function getMessagePayload(message: Message, bot: any) {
             const filePath = path.join(__dirname, `../data/${today}/${roomName}/files`, fileName);
             // 创建文件存储目录（如果不存在）
             if (!fs.existsSync(path.join(__dirname, `../data/${today}/${roomName}/files`))) {
-                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/files`), { mode: 0o755 });
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/files`), { mode: 0o755 , recursive: true});
             }
             // 保存文件
             attachFile.toFile(filePath).then(() => {
@@ -142,7 +143,7 @@ export async function getMessagePayload(message: Message, bot: any) {
 
             // 创建视频存储目录（如果不存在）
             if (!fs.existsSync(path.join(__dirname, `../data/${today}/${roomName}/videos`))) {
-                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/videos`));
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/videos`), { recursive: true});
             }
 
             // 保存视频文件
@@ -198,7 +199,7 @@ export async function getMessagePayload(message: Message, bot: any) {
             // 保存处理图片
             const fileBox = await message.toFileBox();
             if (!fs.existsSync(path.resolve(__dirname, `../data/${today}/${roomName}/image`))) {
-                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/image`));
+                fs.mkdirSync(path.resolve(__dirname, `../data/${today}/${roomName}/image`), { recursive: true});
             }
             const filePath = path.resolve(
                 __dirname,

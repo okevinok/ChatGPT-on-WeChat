@@ -19,7 +19,7 @@ export async function getGptReply(prompt: string) {
     const response = await openai.chat.completions.create({
         messages: [
             { role: 'system', content: env.OPENAI_SYSTEM_MESSAGE },
-            { role: 'user', content: prompt },
+            { role: 'user', content: env.OPENAI_SYSTEM_MESSAGE + prompt },
         ],
         model: chosen_model,
     })
@@ -30,8 +30,8 @@ export async function getGptReply(prompt: string) {
 export async function getGptSummary(prompt: string) {
     const response = await openai.chat.completions.create({
         messages: [
-            { role: 'system', content: '你是一个群聊总结助手，总结下面的内容，默认使用中文回答。'},
-            { role: 'user', content: prompt },
+            { role: 'system', content: ''},
+            { role: 'user', content: env.OPENAI_SYSTEM_MESSAGE_SUMMARY + prompt },
         ],
         model: chosen_model,
     })
